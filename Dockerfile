@@ -2,6 +2,9 @@ FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 
 LABEL description="Docker container for SVRaster with CUDA 12.4 support"
 ARG DEBIAN_FRONTEND=noninteractive
+ENV PIP_NO_CACHE_DIR=1
+ENV MAX_JOBS=4
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0"
 ENV CONDA_DIR=/opt/conda
 ENV PATH=$CONDA_DIR/bin:$PATH
 
@@ -62,7 +65,8 @@ RUN /bin/bash -c "source activate svraster && \
 
 # Install other dependencies (excluding fused-ssim which is already installed)
 RUN /bin/bash -c "source activate svraster && \
-    pip install --no-cache-dir -r requirements.txt"
+    sed '/^git+https:\/\/github.com\/rahul-goel\/fused-ssim/d' requirements.txt > /tmp/requirements-docker.txt && \
+    pip install --no-cache-dir 'numpy<2' -r /tmp/requirements-docker.txt"
 
 # Install CUDA extensions (--no-build-isolation to use existing torch)
 # Set TORCH_CUDA_ARCH_LIST to avoid GPU detection during build
